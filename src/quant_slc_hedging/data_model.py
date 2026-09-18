@@ -25,6 +25,13 @@ class LoanModelInputs:
     interest_rate_spread_threshold: float = 52_885
     # repayment_strategies: List[float] = []
 
+@dataclass
+class InvestmentModelInputs:
+    initial_investment_balance: float 
+    annual_expected_return: float 
+    annual_vol: float
+    
+
 # Annual growth rates and vols
 salary_growth_amounts = {
     "Low": (0.01, 0.05),

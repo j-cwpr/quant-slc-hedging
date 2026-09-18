@@ -76,13 +76,15 @@ class LoanModel:
         interest_accrued = prev_loan_balance * interest_rate_monthly
 
         # On each observation the loan value = loan previous * interest - base repayment
-        loan_balance = np.maximum(0, prev_loan_balance + interest_accrued - base_repayment - additional_repayment)
-        
+        loan_balance_before_add = np.maximum(0, prev_loan_balance + interest_accrued - base_repayment)
+        actual_add_repayment = np.minimum(additional_repayment, loan_balance_before_add)
+        loan_balance = loan_balance_before_add - actual_add_repayment
+
         return LoanModelResult(
             loan_balance=loan_balance,
             interest_accrued=interest_accrued,
             base_repayment=base_repayment,
-            additional_repayment=additional_repayment
+            additional_repayment=actual_add_repayment
         )
 
 

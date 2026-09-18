@@ -1,8 +1,10 @@
-from quant_slc_hedging.data_model import LoanModelInputs, SalaryModelInputs, SalaryGrowthType, salary_growth_amounts
+from quant_slc_hedging.data_model import LoanModelInputs, SalaryModelInputs, InvestmentModelInputs, SalaryGrowthType, salary_growth_amounts
 from quant_slc_hedging.salary import SalaryModel
 from quant_slc_hedging.loan import LoanModel, LoanModelResult
+from quant_slc_hedging.strategies.base_strategy import Strategy
 from quant_slc_hedging.strategies.min_repayment import MinRepaymentStrategy
 from quant_slc_hedging.strategies.fixed_pct_repayment import FixedPctRepaymentStrategy
+from quant_slc_hedging.strategies.index_fund import IndexFundStrategy
 import numpy as np 
 import pandas as pd
 from typing import List, Union
@@ -10,22 +12,22 @@ from dataclasses import dataclass
 
 # One SimHandler run performs n_paths sims for a salary config an strategy
 
-strategy_types = List[Union[MinRepaymentStrategy, FixedPctRepaymentStrategy]]
-
 @dataclass
 class SimulationResult:
     salary_paths: np.ndarray
     loan_result: LoanModelResult
+    investment_contribution: np.ndarray
+    investment_balance: np.ndarray
 
 class SimulationHandler:
-    def __init__(self, salary_config: SalaryModelInputs, loan_config: LoanModelInputs, strategy: strategy_types, n_paths: int, observations: int, seed: int) -> None:
+    def __init__(self, salary_config: SalaryModelInputs, loan_config: LoanModelInputs, investment_config: InvestmentModelInputs, strategy: Strategy, n_paths: int, observations: int, salary_rng: np.random.Generator) -> None:
         self.salary_config = salary_config
         self.loan_config = loan_config
+        self.investment_config = investment_config
         self.strategy = strategy
         self.n_paths = n_paths
         self.observations = observations
-        rng = np.random.default_rng(seed)
-        self.salary_model = SalaryModel(salary_config, rng)
+        self.salary_model = SalaryModel(salary_config, salary_rng)
         self.loan_model = LoanModel(loan_config)
 
     def run_simulation(self):
@@ -35,26 +37,29 @@ class SimulationHandler:
         base_repayment = np.zeros((self.n_paths, self.observations), dtype=float)
         loan_balance[:, 0] = self.loan_config.initial_loan_balance
         additional_repayments = np.zeros((self.n_paths, self.observations), dtype=float)
+        investment_contributions = np.zeros((self.n_paths, self.observations), dtype=float)
+        investment_balances = np.zeros((self.n_paths, self.observations), dtype=float)
+        investment_balances[:, 0] = self.investment_config.initial_investment_balance
 
         for obs in range(1, self.observations):
             salary = salary_paths[:, obs]
             prev_loan_balance = loan_balance[:, obs-1]
 
-            additional_repayment = self.strategy.repayment_decision(
+            action = self.strategy.decide(
                 salary=salary,
                 loan_balance=prev_loan_balance,
             )
+            investment_growth = self.strategy.investment_growth(salary=salary, observation=obs)
 
-            loan_result = self.loan_model.calculate_obs(prev_loan_balance=prev_loan_balance, salaries=salary, additional_repayment=additional_repayment)
-
-            # TODO
-            # action = self.strategy(loan_result)
+            loan_result = self.loan_model.calculate_obs(prev_loan_balance=prev_loan_balance, salaries=salary, additional_repayment=action.additional_repayment)
 
             # Update arrays for next obs
             loan_balance[:, obs] = loan_result.loan_balance
             interest_accrued[:, obs] = loan_result.interest_accrued
             base_repayment[:, obs] = loan_result.base_repayment
-            additional_repayments[:, obs] = additional_repayment
+            additional_repayments[:, obs] = loan_result.additional_repayment
+            investment_contributions[:, obs] = action.investment_contribution
+            investment_balances[:, obs] = (investment_balances[:, obs - 1] + action.investment_contribution) * investment_growth
         
         print("Sim finished")
 
@@ -65,31 +70,42 @@ class SimulationHandler:
                 interest_accrued=interest_accrued,
                 base_repayment=base_repayment,
                 additional_repayment=additional_repayments
-            )
+            ),
+            investment_contribution=investment_contributions,
+            investment_balance=investment_balances
         )
 
         # pd.DataFrame(loan_balance[:, -1]).describe()
 
 
 
-# if __name__ == "__main__":
-#     n_paths = 10_000
-#     years_remaining = 30
-#     observations = years_remaining * 12
-#     seed = 1234
-#     starting_salary = 35_000
-#     initial_loan = 45_000
-#     salary_growth = SalaryGrowthType(growth_type="Medium")
-#     salary_config=SalaryModelInputs(
-#         starting_salary=starting_salary,
-#         salary_growth_dist=salary_growth
-#         )
-#     loan_config = LoanModelInputs(
-#         initial_loan_balance=initial_loan,
-#         remaining_loan_term_months=12*years_remaining
-#     )
-#     # strategy = MinRepaymentStrategy()
-#     strategy = FixedPctRepaymentStrategy(fixed_excess_pct=0.05, repayment_threshold=loan_config.repayment_threshold)
-#     sim = SimulationHandler(salary_config=salary_config, loan_config=loan_config, strategy=strategy, n_paths=n_paths, observations=observations, seed=seed)
-#     res = sim.run_simulation()
-#     print("done")
+if __name__ == "__main__":
+    n_paths = 10_000
+    years_remaining = 30
+    observations = years_remaining * 12
+    seed = 1234
+    starting_salary = 35_000
+    initial_loan = 45_000
+    initial_investment_balance = 10_000
+    salary_growth = SalaryGrowthType(growth_type="Medium")
+    salary_config=SalaryModelInputs(
+        starting_salary=starting_salary,
+        salary_growth_dist=salary_growth
+        )
+    loan_config = LoanModelInputs(
+        initial_loan_balance=initial_loan,
+        remaining_loan_term_months=12*years_remaining
+    )
+    investment_config = InvestmentModelInputs(
+        initial_investment_balance=initial_investment_balance,
+        annual_expected_return=0.05,
+        annual_vol=0.04
+    )
+    salary_rng = np.random.default_rng(seed)
+    investment_rng = np.random.default_rng(seed + 1) 
+    # strategy = MinRepaymentStrategy()
+    # strategy = FixedPctRepaymentStrategy(fixed_excess_pct=0.05, repayment_threshold=loan_config.repayment_threshold)
+    strategy = IndexFundStrategy(investment_config=investment_config, investment_pct=0.05, repayment_threshold=loan_config.repayment_threshold, rng_gen=investment_rng, n_paths=n_paths, n_obs=observations)
+    sim = SimulationHandler(salary_config=salary_config, loan_config=loan_config, investment_config=investment_config, strategy=strategy, n_paths=n_paths, observations=observations, salary_rng=salary_rng)
+    res = sim.run_simulation()
+    print("done")

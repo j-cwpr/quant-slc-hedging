@@ -4,9 +4,16 @@ from quant_slc_hedging.loan import LoanModel
 import numpy as np 
 import pandas as pd
 from dataclasses import dataclass
+from quant_slc_hedging.strategies.base_strategy import Strategy, StrategyAction
 
-class MinRepaymentStrategy:
+class MinRepaymentStrategy(Strategy):
     """Minimum repayment strategy where no additional repayments are made."""
 
-    def repayment_decision(self, salary: np.ndarray, loan_balance: np.ndarray) -> np.ndarray:
-        return np.zeros(shape=salary.shape)
+    def decide(self, salary: np.ndarray, loan_balance: np.ndarray) -> StrategyAction:
+        return StrategyAction(
+            additional_repayment=np.zeros_like(salary),
+            investment_contribution=np.zeros_like(salary)
+        )
+    
+    def investment_growth(self, salary: np.ndarray) -> np.ndarray:
+        return np.ones_like(salary)
