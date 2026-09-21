@@ -45,21 +45,30 @@ class SimulationHandler:
             salary = salary_paths[:, obs]
             prev_loan_balance = loan_balance[:, obs-1]
 
+            # Strategy action for mandatory/additional repayment
             action = self.strategy.decide(
                 salary=salary,
-                loan_balance=prev_loan_balance,
+                loan_balance=prev_loan_balance
             )
-            investment_growth = self.strategy.investment_growth(salary=salary, observation=obs)
 
+            # Calculate investments balance
+            investment_growth = self.strategy.investment_growth(salary=salary, observation=obs)
+            investment_balances[:, obs] = (investment_balances[:, obs - 1] + action.investment_contribution) * investment_growth
+
+            # Calculate loan
             loan_result = self.loan_model.calculate_obs(prev_loan_balance=prev_loan_balance, salaries=salary, additional_repayment=action.additional_repayment)
 
+            # If investment balance enough then payoff the loan
+            payoff = self.strategy.loan_payoff_choice(loan_balance=loan_result.loan_balance, investment_balance=investment_balances[:, obs])
+
             # Update arrays for next obs
-            loan_balance[:, obs] = loan_result.loan_balance
+            loan_balance[:, obs] = loan_result.loan_balance - payoff
+            investment_balances[:, obs] -= payoff
             interest_accrued[:, obs] = loan_result.interest_accrued
             base_repayment[:, obs] = loan_result.base_repayment
-            additional_repayments[:, obs] = loan_result.additional_repayment
+            additional_repayments[:, obs] = loan_result.additional_repayment + payoff
             investment_contributions[:, obs] = action.investment_contribution
-            investment_balances[:, obs] = (investment_balances[:, obs - 1] + action.investment_contribution) * investment_growth
+            
         
         print("Sim finished")
 
@@ -99,7 +108,8 @@ if __name__ == "__main__":
     investment_config = InvestmentModelInputs(
         initial_investment_balance=initial_investment_balance,
         annual_expected_return=0.05,
-        annual_vol=0.04
+        annual_vol=0.04,
+        payoff_loan_with_investments=True
     )
     salary_rng = np.random.default_rng(seed)
     investment_rng = np.random.default_rng(seed + 1) 

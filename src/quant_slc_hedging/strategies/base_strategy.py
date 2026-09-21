@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import numpy as np
+from typing import Tuple
 
 @dataclass
 class StrategyAction:
@@ -21,3 +22,6 @@ class Strategy:
     
     def investment_growth(self, salary: np.ndarray) -> np.ndarray:
         return np.ones_like(salary)
+
+    def loan_payoff_choice(self, loan_balance: np.ndarray, investment_balance: np.ndarray) -> np.ndarry:
+        return action

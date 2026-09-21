@@ -30,6 +30,7 @@ class InvestmentModelInputs:
     initial_investment_balance: float 
     annual_expected_return: float 
     annual_vol: float
+    payoff_loan_with_investments: bool
     
 
 # Annual growth rates and vols
