@@ -21,6 +21,3 @@ class FixedPctRepaymentStrategy(Strategy):
             additional_repayment=additional_repayment,
             investment_contribution=np.zeros_like(salary)
         )
-    
-    def investment_growth(self, salary: np.ndarray) -> np.ndarray:
-        return np.ones_like(salary)

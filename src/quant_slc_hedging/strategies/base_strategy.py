@@ -20,8 +20,8 @@ class Strategy:
             investment_contribution=np.zeros_like(salary)
         )
     
-    def investment_growth(self, salary: np.ndarray) -> np.ndarray:
+    def investment_growth(self, salary: np.ndarray, observation: int) -> np.ndarray:
         return np.ones_like(salary)
 
     def loan_payoff_choice(self, loan_balance: np.ndarray, investment_balance: np.ndarray) -> np.ndarry:
-        return action
+        return np.zeros_like(loan_balance)

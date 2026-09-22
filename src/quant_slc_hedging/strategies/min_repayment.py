@@ -14,6 +14,3 @@ class MinRepaymentStrategy(Strategy):
             additional_repayment=np.zeros_like(salary),
             investment_contribution=np.zeros_like(salary)
         )
-    
-    def investment_growth(self, salary: np.ndarray) -> np.ndarray:
-        return np.ones_like(salary)

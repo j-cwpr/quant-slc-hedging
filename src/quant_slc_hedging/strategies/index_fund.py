@@ -8,8 +8,9 @@ import pandas as pd
 from dataclasses import dataclass
 
 class IndexFundStrategy(Strategy):
-    def __init__(self, investment_config: InvestmentModelInputs, investment_pct: float, repayment_threshold: float, rng_gen: np.random.Generator, n_paths: int, n_obs: int) -> None:
+    def __init__(self, investment_config: InvestmentModelInputs, investment_pct: float, repayment_pct: float, repayment_threshold: float, rng_gen: np.random.Generator, n_paths: int, n_obs: int) -> None:
         self.investment_pct = investment_pct
+        self.repayment_pct = repayment_pct
         self.repayment_threshold = repayment_threshold
         self.config = investment_config
         self.index_model = IndexFundModel(
@@ -20,10 +21,11 @@ class IndexFundStrategy(Strategy):
 
     def decide(self, salary: np.ndarray, loan_balance: np.ndarray) -> StrategyAction:
         excess_salary = np.maximum(salary - self.repayment_threshold, 0)
-        investment_contribution = excess_salary * self.investment_pct / 12
+        investment_contribution = excess_salary * self.investment_pct / 12.0
+        additional_repayment = excess_salary * self.repayment_pct / 12.0
 
         return StrategyAction(
-            additional_repayment=np.zeros_like(salary),
+            additional_repayment=additional_repayment,
             investment_contribution=investment_contribution
         )
 
