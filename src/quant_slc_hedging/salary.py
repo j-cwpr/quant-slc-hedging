@@ -12,7 +12,10 @@ class SalaryModel:
         self._build_params()
 
     def _build_params(self) -> None:
-        annual_rate, annual_vol = salary_growth_amounts[self.config.salary_growth_dist.growth_type]
+        if self.config.salary_growth_dist.growth_type == "Custom":
+            annual_rate, annual_vol = self.config.salary_growth_dist.custom
+        else:
+            annual_rate, annual_vol = salary_growth_amounts[self.config.salary_growth_dist.growth_type]
         monthly_rate = (1 + annual_rate)**(1/12) - 1
         monthly_vol = annual_vol / 12**0.5
         self.sigma = monthly_vol

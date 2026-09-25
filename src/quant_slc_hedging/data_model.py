@@ -2,9 +2,17 @@ import pandas as pd
 from dataclasses import dataclass
 from typing import Literal, List
 
+# Annual growth rates and vols
+salary_growth_amounts = {
+    "Low": (0.01, 0.05),
+    "Medium": (0.05, 0.1),
+    "High": (0.1, 0.12)
+}
+
 @dataclass
 class SalaryGrowthType:
-    growth_type: Literal['High', 'Medium', 'Low'] = 'Medium'
+    growth_type: Literal['High', 'Medium', 'Low', 'Custom'] = 'Medium'
+    custom: Optional[Tuple[float]] = None # Allows overrides of mean, vol salary growth
 
 @dataclass 
 class SalaryModelInputs:
@@ -31,11 +39,6 @@ class InvestmentModelInputs:
     annual_expected_return: float 
     annual_vol: float
     payoff_loan_with_investments: bool
+    annual_risk_free_rate: float = 0.03
     
 
-# Annual growth rates and vols
-salary_growth_amounts = {
-    "Low": (0.01, 0.05),
-    "Medium": (0.05, 0.1),
-    "High": (0.1, 0.12)
-}

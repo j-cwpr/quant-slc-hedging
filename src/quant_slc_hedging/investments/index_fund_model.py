@@ -32,6 +32,17 @@ class IndexFundModel:
 
         return growth_paths
 
+    def generate_fund_levels(self, n_paths: int, n_months: int) -> np.ndarray:
+        growth_paths = self.generate_growth_paths(n_paths, n_months)
+        levels = np.zeros((n_paths, n_months))
+        levels[:, 0] = self.config.initial_investment_balance
+
+        for obs in range(1, n_months):
+            levels[:, obs] = levels[:, obs-1] * growth_paths[:, obs-1]
+        
+        return levels
+
+
 # if __name__ == '__main__':
 #     config = InvestmentModelInputs(
 #         initial_investment_balance=50_000,
