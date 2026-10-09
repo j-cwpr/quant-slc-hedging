@@ -35,6 +35,8 @@ class IndexFundStrategy(Strategy):
     def loan_payoff_choice(self, loan_balance: np.ndarray, investment_balance: np.ndarray) -> np.ndarray:
         if self.config.payoff_loan_with_investments:
             payoff = np.where(investment_balance >= loan_balance, loan_balance, 0)
+        else:
+            payoff = 0
         
         return payoff
 

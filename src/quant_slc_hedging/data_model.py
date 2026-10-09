@@ -5,8 +5,9 @@ from typing import Literal, List
 # Annual growth rates and vols
 salary_growth_amounts = {
     "Low": (0.01, 0.05),
-    "Medium": (0.05, 0.1),
-    "High": (0.1, 0.12)
+    "Medium": (0.025, 0.07),
+    "High": (0.04, 0.1)
+    # "High": (0.07, 0.1)
 }
 
 @dataclass
