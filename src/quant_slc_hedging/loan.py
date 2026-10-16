@@ -1,8 +1,15 @@
-from quant_slc_hedging.data_model import LoanModelInputs, SalaryModelInputs, SalaryGrowthType, salary_growth_amounts
-import numpy as np 
-import pandas as pd
-from typing import Tuple, Optional
 from dataclasses import dataclass
+from typing import Optional, Tuple
+
+import numpy as np
+import pandas as pd
+
+from quant_slc_hedging.data_model import (
+    LoanModelInputs,
+    SalaryGrowthType,
+    SalaryModelInputs,
+    salary_growth_amounts,
+)
 
 
 @dataclass
@@ -17,7 +24,9 @@ class LoanModel:
     def __init__(self, config: LoanModelInputs) -> None:
         self.config = config
 
-    def _calculate_var_interest_rate(self, salary: np.ndarray, monthly: bool = True) -> np.ndarray:
+    def _calculate_var_interest_rate(
+        self, salary: np.ndarray, monthly: bool = True
+    ) -> np.ndarray:
         """Calculate the variable interest rate dependent on upper and lower salary thresholds."""
         lower_salary_t = self.config.repayment_threshold
         upper_salary_t = self.config.interest_rate_spread_threshold
@@ -25,19 +34,24 @@ class LoanModel:
         salary_prop = (salary - lower_salary_t) / (upper_salary_t - lower_salary_t)
         salary_prop = np.clip(salary_prop, 0.0, 1.0)
 
-        interest_rate = self.config.base_interest_rate + self.config.interest_rate_spread * salary_prop
-        
+        interest_rate = (
+            self.config.base_interest_rate
+            + self.config.interest_rate_spread * salary_prop
+        )
+
         if monthly:
-            interest_rate = (interest_rate + 1)**(1/12) - 1
+            interest_rate = (interest_rate + 1) ** (1 / 12) - 1
 
         return interest_rate
 
-    def _calculate_base_repayment(self, salary: np.ndarray, monthly: bool = True) -> np.ndarray:
-        salary_above_threshold = np.maximum(
-            salary - self.config.repayment_threshold, 0
-        )
+    def _calculate_base_repayment(
+        self, salary: np.ndarray, monthly: bool = True
+    ) -> np.ndarray:
+        salary_above_threshold = np.maximum(salary - self.config.repayment_threshold, 0)
 
-        base_repayment = salary_above_threshold * self.config.repayment_amount_pct_salary
+        base_repayment = (
+            salary_above_threshold * self.config.repayment_amount_pct_salary
+        )
 
         if monthly:
             base_repayment /= 12
@@ -52,31 +66,46 @@ class LoanModel:
         loan_paths[:, 0] = self.config.initial_loan_balance
 
         for obs in range(1, n_obs):
-            salaries = salary_paths [:, obs]
-            interest_rate_monthly = self._calculate_var_interest_rate(salaries, monthly=True)
-            base_repayment[:, obs] = self._calculate_base_repayment(salaries, monthly=True)
+            salaries = salary_paths[:, obs]
+            interest_rate_monthly = self._calculate_var_interest_rate(
+                salaries, monthly=True
+            )
+            base_repayment[:, obs] = self._calculate_base_repayment(
+                salaries, monthly=True
+            )
             interest_accrued[:, obs] = loan_paths[:, obs - 1] * interest_rate_monthly
 
             # On each observation the loan value = loan previous * interest - base repayment
             loan_paths[:, obs] = np.maximum(
                 0,
-                loan_paths[:, obs - 1] + interest_accrued[:, obs] - base_repayment[:, obs]
+                loan_paths[:, obs - 1]
+                + interest_accrued[:, obs]
+                - base_repayment[:, obs],
             )
 
         return LoanModelResult(
             loan_balance=loan_paths,
             interest_accrued=interest_accrued,
-            base_repayment=base_repayment
+            base_repayment=base_repayment,
         )
 
-    def calculate_obs(self, prev_loan_balance: np.ndarray, salaries: np.ndarray, additional_repayment: np.ndarry) -> None:
+    def calculate_obs(
+        self,
+        prev_loan_balance: np.ndarray,
+        salaries: np.ndarray,
+        additional_repayment: np.ndarry,
+    ) -> None:
         """Performs a single observation calculation now, needed to properly handle state."""
-        interest_rate_monthly = self._calculate_var_interest_rate(salaries, monthly=True)
+        interest_rate_monthly = self._calculate_var_interest_rate(
+            salaries, monthly=True
+        )
         base_repayment = self._calculate_base_repayment(salaries, monthly=True)
         interest_accrued = prev_loan_balance * interest_rate_monthly
 
         # On each observation the loan value = loan previous * interest - base repayment
-        loan_balance_before_add = np.maximum(0, prev_loan_balance + interest_accrued - base_repayment)
+        loan_balance_before_add = np.maximum(
+            0, prev_loan_balance + interest_accrued - base_repayment
+        )
         actual_add_repayment = np.minimum(additional_repayment, loan_balance_before_add)
         loan_balance = loan_balance_before_add - actual_add_repayment
 
@@ -84,9 +113,8 @@ class LoanModel:
             loan_balance=loan_balance,
             interest_accrued=interest_accrued,
             base_repayment=base_repayment,
-            additional_repayment=actual_add_repayment
+            additional_repayment=actual_add_repayment,
         )
-
 
 
 # if __name__ == '__main__':
@@ -111,4 +139,3 @@ class LoanModel:
 #     ar = np.full((1_000, 360), 0)
 #     lm = LoanModel(config)
 #     lp = lm.generate_loan_paths(sp)
-    

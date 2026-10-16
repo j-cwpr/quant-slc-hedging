@@ -1,24 +1,37 @@
-from quant_slc_hedging.data_model import LoanModelInputs, SalaryModelInputs, InvestmentModelInputs, salary_growth_amounts
-from quant_slc_hedging.salary import SalaryModel
-from quant_slc_hedging.loan import LoanModel
-from quant_slc_hedging.strategies.base_strategy import Strategy, StrategyAction
-import numpy as np 
-import pandas as pd
 from dataclasses import dataclass
+
+import numpy as np
+import pandas as pd
+
+from quant_slc_hedging.data_model import (
+    InvestmentModelInputs,
+    LoanModelInputs,
+    SalaryModelInputs,
+    salary_growth_amounts,
+)
+from quant_slc_hedging.loan import LoanModel
+from quant_slc_hedging.salary import SalaryModel
+from quant_slc_hedging.strategies.base_strategy import Strategy, StrategyAction
 
 # For a given fund we may expect an annual return and vol
 # For many paths find the monthly return on investment or
 # the growth of investment
 
+
 class IndexFundModel:
-    def __init__(self, config: InvestmentModelInputs, rng_gen: np.random.Generator) -> None:
+    def __init__(
+        self, config: InvestmentModelInputs, rng_gen: np.random.Generator
+    ) -> None:
         self.config = config
         self.rng_gen = rng_gen
         self._build_params()
 
     def _build_params(self) -> None:
-        annual_rate, annual_vol = self.config.annual_expected_return, self.config.annual_vol
-        monthly_rate = (1 + annual_rate)**(1/12) - 1
+        annual_rate, annual_vol = (
+            self.config.annual_expected_return,
+            self.config.annual_vol,
+        )
+        monthly_rate = (1 + annual_rate) ** (1 / 12) - 1
         monthly_vol = annual_vol / 12**0.5
         self.sigma = monthly_vol
         self.mu = np.log(1 + monthly_rate) - 0.5 * self.sigma**2
@@ -38,8 +51,8 @@ class IndexFundModel:
         levels[:, 0] = self.config.initial_investment_balance
 
         for obs in range(1, n_months):
-            levels[:, obs] = levels[:, obs-1] * growth_paths[:, obs-1]
-        
+            levels[:, obs] = levels[:, obs - 1] * growth_paths[:, obs - 1]
+
         return levels
 
 
