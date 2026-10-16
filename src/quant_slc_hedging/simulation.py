@@ -1,23 +1,17 @@
 from dataclasses import dataclass
-from typing import List, Optional, Union
+from typing import Optional
 
 import numpy as np
-import pandas as pd
 
 from quant_slc_hedging.data_model import (
     InvestmentModelInputs,
     LoanModelInputs,
-    SalaryGrowthType,
     SalaryModelInputs,
-    salary_growth_amounts,
 )
 from quant_slc_hedging.loan import LoanModel, LoanModelResult
 from quant_slc_hedging.salary import SalaryModel
 from quant_slc_hedging.strategies.base_strategy import Strategy
 from quant_slc_hedging.strategies.covered_call import CoveredCallStrategy
-from quant_slc_hedging.strategies.fixed_pct_repayment import FixedPctRepaymentStrategy
-from quant_slc_hedging.strategies.index_fund import IndexFundStrategy
-from quant_slc_hedging.strategies.min_repayment import MinRepaymentStrategy
 
 # One SimHandler run performs n_paths sims for a salary config an strategy
 
@@ -121,7 +115,7 @@ class SimulationHandler:
                     opening_balance * self.strategy.option_payoff_return[:, obs - 1]
                 )
 
-        print("Sim finished")
+        print("Simulation finished")
 
         return SimulationResult(
             salary_paths=salary_paths,
@@ -141,53 +135,54 @@ class SimulationHandler:
         # pd.DataFrame(loan_balance[:, -1]).describe()
 
 
-if __name__ == "__main__":
-    n_paths = 10_000
-    years_remaining = 25
-    observations = years_remaining * 12
-    seed = 1234
-    starting_salary = 35_000
-    initial_loan = 45_000
-    initial_investment_balance = 5_000
-    salary_growth = SalaryGrowthType(growth_type="Medium")
-    # salary_growth = SalaryGrowthType(growth_type="Custom", custom=(0.5, 0.3))
-    salary_config = SalaryModelInputs(
-        starting_salary=starting_salary, salary_growth_dist=salary_growth
-    )
-    loan_config = LoanModelInputs(
-        initial_loan_balance=initial_loan,
-        remaining_loan_term_months=12 * years_remaining,
-    )
-    investment_config = InvestmentModelInputs(
-        initial_investment_balance=initial_investment_balance,
-        annual_expected_return=0.05,
-        annual_vol=0.15,
-        annual_risk_free_rate=0.05,
-        payoff_loan_with_investments=True,
-    )
-    salary_rng = np.random.default_rng(seed)
-    investment_rng = np.random.default_rng(seed + 1)
-    # strategy = MinRepaymentStrategy(investment_config=investment_config)
-    # strategy = FixedPctRepaymentStrategy(fixed_excess_pct=0.05, repayment_threshold=loan_config.repayment_threshold, investment_config=investment_config)
-    # strategy = IndexFundStrategy(investment_config=investment_config, investment_pct=0.05, repayment_pct=0.05, repayment_threshold=loan_config.repayment_threshold, rng_gen=investment_rng, n_paths=n_paths, n_obs=observations)
-    strategy = CoveredCallStrategy(
-        investment_config=investment_config,
-        investment_pct=0.05,
-        repayment_pct=0.05,
-        repayment_threshold=loan_config.repayment_threshold,
-        target_moneyness=1.2,
-        rng_gen=investment_rng,
-        n_paths=n_paths,
-        n_obs=observations,
-    )
-    sim = SimulationHandler(
-        salary_config=salary_config,
-        loan_config=loan_config,
-        investment_config=investment_config,
-        strategy=strategy,
-        n_paths=n_paths,
-        observations=observations,
-        salary_rng=salary_rng,
-    )
-    res = sim.run_simulation()
-    print("done")
+# For testing
+# if __name__ == "__main__":
+#     n_paths = 10_000
+#     years_remaining = 25
+#     observations = years_remaining * 12
+#     seed = 1234
+#     starting_salary = 35_000
+#     initial_loan = 45_000
+#     initial_investment_balance = 5_000
+#     salary_growth = SalaryGrowthType(growth_type="Medium")
+#     # salary_growth = SalaryGrowthType(growth_type="Custom", custom=(0.5, 0.3))
+#     salary_config = SalaryModelInputs(
+#         starting_salary=starting_salary, salary_growth_dist=salary_growth
+#     )
+#     loan_config = LoanModelInputs(
+#         initial_loan_balance=initial_loan,
+#         remaining_loan_term_months=12 * years_remaining,
+#     )
+#     investment_config = InvestmentModelInputs(
+#         initial_investment_balance=initial_investment_balance,
+#         annual_expected_return=0.05,
+#         annual_vol=0.15,
+#         annual_risk_free_rate=0.05,
+#         payoff_loan_with_investments=True,
+#     )
+#     salary_rng = np.random.default_rng(seed)
+#     investment_rng = np.random.default_rng(seed + 1)
+#     # strategy = MinRepaymentStrategy(investment_config=investment_config)
+#     # strategy = FixedPctRepaymentStrategy(fixed_excess_pct=0.05, repayment_threshold=loan_config.repayment_threshold, investment_config=investment_config)
+#     # strategy = IndexFundStrategy(investment_config=investment_config, investment_pct=0.05, repayment_pct=0.05, repayment_threshold=loan_config.repayment_threshold, rng_gen=investment_rng, n_paths=n_paths, n_obs=observations)
+#     strategy = CoveredCallStrategy(
+#         investment_config=investment_config,
+#         investment_pct=0.05,
+#         repayment_pct=0.05,
+#         repayment_threshold=loan_config.repayment_threshold,
+#         target_moneyness=1.2,
+#         rng_gen=investment_rng,
+#         n_paths=n_paths,
+#         n_obs=observations,
+#     )
+#     sim = SimulationHandler(
+#         salary_config=salary_config,
+#         loan_config=loan_config,
+#         investment_config=investment_config,
+#         strategy=strategy,
+#         n_paths=n_paths,
+#         observations=observations,
+#         salary_rng=salary_rng,
+#     )
+#     res = sim.run_simulation()
+#     print("done")

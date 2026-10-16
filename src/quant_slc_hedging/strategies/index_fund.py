@@ -1,17 +1,9 @@
-from dataclasses import dataclass
-
 import numpy as np
-import pandas as pd
 
 from quant_slc_hedging.data_model import (
     InvestmentModelInputs,
-    LoanModelInputs,
-    SalaryModelInputs,
-    salary_growth_amounts,
 )
 from quant_slc_hedging.investments.index_fund_model import IndexFundModel
-from quant_slc_hedging.loan import LoanModel
-from quant_slc_hedging.salary import SalaryModel
 from quant_slc_hedging.strategies.base_strategy import Strategy, StrategyAction
 
 

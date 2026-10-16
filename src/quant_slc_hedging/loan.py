@@ -1,14 +1,10 @@
 from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import Optional
 
 import numpy as np
-import pandas as pd
 
 from quant_slc_hedging.data_model import (
     LoanModelInputs,
-    SalaryGrowthType,
-    SalaryModelInputs,
-    salary_growth_amounts,
 )
 
 

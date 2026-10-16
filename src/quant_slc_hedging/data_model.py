@@ -1,7 +1,6 @@
 from dataclasses import dataclass
-from typing import List, Literal
+from typing import Literal
 
-import pandas as pd
 
 # Annual growth rates and vols
 salary_growth_amounts = {

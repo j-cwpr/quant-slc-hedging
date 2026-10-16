@@ -1,11 +1,8 @@
 from typing import Literal, Tuple, Union
 
 import numpy as np
-import pandas as pd
 
 from quant_slc_hedging.data_model import (
-    LoanModelInputs,
-    SalaryGrowthType,
     SalaryModelInputs,
     salary_growth_amounts,
 )

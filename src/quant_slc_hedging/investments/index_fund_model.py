@@ -1,17 +1,8 @@
-from dataclasses import dataclass
-
 import numpy as np
-import pandas as pd
 
 from quant_slc_hedging.data_model import (
     InvestmentModelInputs,
-    LoanModelInputs,
-    SalaryModelInputs,
-    salary_growth_amounts,
 )
-from quant_slc_hedging.loan import LoanModel
-from quant_slc_hedging.salary import SalaryModel
-from quant_slc_hedging.strategies.base_strategy import Strategy, StrategyAction
 
 # For a given fund we may expect an annual return and vol
 # For many paths find the monthly return on investment or
