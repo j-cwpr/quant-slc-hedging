@@ -77,5 +77,7 @@ class CoveredCallStrategy(Strategy):
     ) -> np.ndarray:
         if self.config.payoff_loan_with_investments:
             payoff = np.where(investment_balance >= loan_balance, loan_balance, 0)
+        else:
+            payoff = 0
 
         return payoff
